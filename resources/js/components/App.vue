@@ -11,8 +11,8 @@
             <div class="chat">
             </div>
         </div>
-        <form>
-            <input>
+        <form @submit.prevent="addPost">
+            <input v-model="textValue">
             <input type="submit" value="送信">
         </form>
     </div>
@@ -25,7 +25,17 @@
             return {
                 users,
                 selectUser: users[0],
+                textValue: '',
             }
+        },
+        methods: {
+            async addPost() {
+                if (!this.textValue.trim()) {
+                    return
+                }
+                await axios.post('/api/chat/add', { user: this.selectUser, post: this.textValue })
+                this.textValue = ''
+            },
         },
     }
 </script>
