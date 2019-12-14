@@ -1875,6 +1875,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0__);
 
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+//
+//
+//
+//
+//
 //
 //
 //
@@ -1901,8 +1915,22 @@ var users = ['Bob', 'Alice', 'Carol'];
     return {
       users: users,
       selectUser: users[0],
-      textValue: ''
+      textValue: '',
+      posts: []
     };
+  },
+  created: function created() {
+    var _this = this;
+
+    var es = new EventSource('/api/chat/event');
+    es.addEventListener('message', function (e) {
+      var _JSON$parse = JSON.parse(e.data),
+          posts = _JSON$parse.posts;
+
+      if (posts.length) {
+        _this.renderList(posts);
+      }
+    });
   },
   methods: {
     addPost: function addPost() {
@@ -1933,6 +1961,15 @@ var users = ['Bob', 'Alice', 'Carol'];
           }
         }
       }, null, this);
+    },
+    renderList: function renderList(posts) {
+      var _this2 = this;
+
+      this.posts = [].concat(_toConsumableArray(this.posts), _toConsumableArray(posts)); // 下に追加したのでスクロールする
+
+      this.$nextTick(function () {
+        return _this2.$refs.chat.scrollTop = _this2.$refs.chat.scrollHeight;
+      });
     }
   }
 });
@@ -38765,7 +38802,27 @@ var render = function() {
         )
       ]),
       _vm._v(" "),
-      _c("div", { staticClass: "chat" })
+      _c(
+        "div",
+        { ref: "chat", staticClass: "chat" },
+        _vm._l(_vm.posts, function(ref) {
+          var user = ref.user
+          var post = ref.post
+          var created_at = ref.created_at
+          return _c("div", [
+            _c("p", [
+              _c("strong", [_vm._v(_vm._s(user))]),
+              _vm._v(" "),
+              _c("small", [_vm._v(_vm._s(created_at))])
+            ]),
+            _vm._v(" "),
+            _c("p", [_vm._v(_vm._s(post))]),
+            _vm._v(" "),
+            _c("hr")
+          ])
+        }),
+        0
+      )
     ]),
     _vm._v(" "),
     _c(

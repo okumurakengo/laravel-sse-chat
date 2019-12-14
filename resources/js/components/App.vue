@@ -8,7 +8,12 @@
                     </option>
                 </select>
             </div>
-            <div class="chat">
+            <div class="chat" ref="chat">
+                 <div v-for="({ user, post, created_at }) in posts">
+                    <p><strong>{{ user }}</strong>&nbsp;<small>{{ created_at }}</small></p>
+                    <p>{{ post }}</p>
+                    <hr>
+                </div>
             </div>
         </div>
         <form @submit.prevent="addPost">
@@ -26,7 +31,17 @@
                 users,
                 selectUser: users[0],
                 textValue: '',
+                posts: [],
             }
+        },
+        created() {
+            const es = new EventSource('/api/chat/event');
+            es.addEventListener('message', e => {
+                const { posts } = JSON.parse(e.data)
+                if (posts.length) {
+                    this.renderList(posts)
+                }
+            });
         },
         methods: {
             async addPost() {
@@ -35,6 +50,11 @@
                 }
                 await axios.post('/api/chat/add', { user: this.selectUser, post: this.textValue })
                 this.textValue = ''
+            },
+            renderList(posts) {
+                this.posts = [...this.posts, ...posts]
+                // 下に追加したのでスクロールする
+                this.$nextTick(() => this.$refs.chat.scrollTop = this.$refs.chat.scrollHeight)
             },
         },
     }
