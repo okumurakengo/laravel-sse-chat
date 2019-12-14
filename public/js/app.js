@@ -1909,6 +1909,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 //
 //
 //
+//
 var users = ['Bob', 'Alice', 'Carol'];
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -1916,7 +1917,8 @@ var users = ['Bob', 'Alice', 'Carol'];
       users: users,
       selectUser: users[0],
       textValue: '',
-      posts: []
+      posts: [],
+      typingUsers: []
     };
   },
   created: function created() {
@@ -1925,10 +1927,16 @@ var users = ['Bob', 'Alice', 'Carol'];
     var es = new EventSource('/api/chat/event');
     es.addEventListener('message', function (e) {
       var _JSON$parse = JSON.parse(e.data),
-          posts = _JSON$parse.posts;
+          posts = _JSON$parse.posts,
+          _JSON$parse$typing_us = _JSON$parse.typing_users,
+          typingUsers = _JSON$parse$typing_us === void 0 ? [] : _JSON$parse$typing_us;
 
       if (posts.length) {
         _this.renderList(posts);
+      }
+
+      if (!_.isEqual(_this.typingUsers, typingUsers)) {
+        _this.typingUsers = typingUsers;
       }
     });
   },
@@ -1970,6 +1978,44 @@ var users = ['Bob', 'Alice', 'Carol'];
       this.$nextTick(function () {
         return _this2.$refs.chat.scrollTop = _this2.$refs.chat.scrollHeight;
       });
+    },
+    typing: _.throttle(function _callee() {
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.async(function _callee$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              _context2.next = 2;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_0___default.a.awrap(axios.post('/api/chat/typing', {
+                user: this.selectUser
+              }));
+
+            case 2:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, null, this);
+    }, 700)
+  },
+  computed: {
+    typingMessage: function typingMessage() {
+      var _this3 = this;
+
+      var typingOtherUsers = this.typingUsers.filter(function (user) {
+        return user !== _this3.selectUser;
+      });
+
+      if (typingOtherUsers.length === 0) {
+        return '';
+      }
+
+      if (typingOtherUsers.length === 1) {
+        return "".concat(typingOtherUsers[0], "\u304C\u5165\u529B\u3057\u3066\u3044\u307E\u3059");
+      }
+
+      if (typingOtherUsers.length > 1) {
+        return '複数人が入力しています';
+      }
     }
   }
 });
@@ -38847,6 +38893,7 @@ var render = function() {
           ],
           domProps: { value: _vm.textValue },
           on: {
+            keyup: _vm.typing,
             input: function($event) {
               if ($event.target.composing) {
                 return
@@ -38856,7 +38903,8 @@ var render = function() {
           }
         }),
         _vm._v(" "),
-        _c("input", { attrs: { type: "submit", value: "送信" } })
+        _c("input", { attrs: { type: "submit", value: "送信" } }),
+        _vm._v("\n        " + _vm._s(_vm.typingMessage) + "\n    ")
       ]
     )
   ])

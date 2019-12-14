@@ -17,8 +17,9 @@
             </div>
         </div>
         <form @submit.prevent="addPost">
-            <input v-model="textValue">
+            <input v-model="textValue" @keyup="typing">
             <input type="submit" value="送信">
+            {{ typingMessage }}
         </form>
     </div>
 </template>
@@ -32,14 +33,18 @@
                 selectUser: users[0],
                 textValue: '',
                 posts: [],
+                typingUsers: [],
             }
         },
         created() {
             const es = new EventSource('/api/chat/event');
             es.addEventListener('message', e => {
-                const { posts } = JSON.parse(e.data)
+                const { posts, typing_users: typingUsers = [] } = JSON.parse(e.data)
                 if (posts.length) {
                     this.renderList(posts)
+                }
+                if (!_.isEqual(this.typingUsers, typingUsers)) {
+                    this.typingUsers = typingUsers
                 }
             });
         },
@@ -56,6 +61,23 @@
                 // 下に追加したのでスクロールする
                 this.$nextTick(() => this.$refs.chat.scrollTop = this.$refs.chat.scrollHeight)
             },
+            typing: _.throttle(async function () {
+                await axios.post('/api/chat/typing', { user: this.selectUser })
+            }, 700),
+        },
+        computed: {
+            typingMessage() {
+                const typingOtherUsers = this.typingUsers.filter(user => user !== this.selectUser)
+                if (typingOtherUsers.length === 0) {
+                    return ''
+                }
+                if (typingOtherUsers.length === 1) {
+                    return `${typingOtherUsers[0]}が入力しています`
+                }
+                if (typingOtherUsers.length > 1) {
+                    return '複数人が入力しています'
+                }
+            }
         },
     }
 </script>

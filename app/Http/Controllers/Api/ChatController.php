@@ -31,6 +31,18 @@ class ChatController extends Controller
     }
 
     /**
+     * 入力中の人の情報を保存
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function typing(Request $request): JsonResponse
+    {
+        Redis::sadd('typing_users', $request->get('user'));
+        return response()->json(['result' => 'ok']);
+    }
+
+    /**
      * チャット一覧取得
      * 
      * @return StreamedResponse
@@ -46,16 +58,18 @@ class ChatController extends Controller
             flush();
             while(true) {
                 $latestCreatedAt = is_null(Redis::get('latest_created_at')) ? Carbon::minValue() : Carbon::parse(Redis::get('latest_created_at'));
+                $typingUsers = Redis::smembers('typing_users');
                 if ($latestCreatedAt->gt($tmpLatestCreatedAt)) {
                     // チャットに更新があった場合はテーブルから取得
                     $latestChats = Chat::where('created_at', '>', $tmpLatestCreatedAt)->orderBy('created_at', 'asc')->get();
                     $tmpLatestCreatedAt = $latestCreatedAt;
                 }
-                echo 'data: ' . json_encode(['posts' => $latestChats ?? []]) . "\n\n";
+                echo 'data: ' . json_encode(['posts' => $latestChats ?? [], 'typing_users' => $typingUsers]) . "\n\n";
                 ob_flush();
                 flush();
 
                 $latestChats = null;
+                Redis::del('typing_users');
 
                 sleep(1);
             }
